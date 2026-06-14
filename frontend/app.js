@@ -4,7 +4,6 @@ const limitesQuixada = L.latLngBounds(
     [-4.8800, -38.8500]
 );
 
-
 const map = L.map('map', {
     center: [-4.9689, -39.0161],
     zoom: 14,
@@ -19,20 +18,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Função roda sempre que clica no mapa
-function aoClicarNoMapa(evento) {
-    // Grava latitude e longitude ao clicar no mapa
-    const lat = evento.latlng.lat;
-    const lng = evento.latlng.lng;
-
-    L.popup()
-        .setLatLng(evento.latlng)
-        .setContent(`Você clicou nas coordenadas:<br>Lat: ${lat.toFixed(4)}<br>Lng: ${lng.toFixed(4)}`)
-        .openOn(map);
+// NOVA FUNÇÃO: Cria o marcador no mapa com um balão de informações (Popup)
+function adicionarMarcadorNoMapa(lat, lng, rua, descricao) {
+    L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(`<b>Alagamento relatado!</b><br><b>Rua:</b> ${rua}<br><b>Descrição:</b> ${descricao}`)
+        .openPopup();
 }
 
-map.on('click', aoClicarNoMapa);
-
+// Função roda sempre que clica no mapa
 function aoClicarNoMapa(evento) {
     const lat = evento.latlng.lat;
     const lng = evento.latlng.lng;
@@ -40,10 +34,34 @@ function aoClicarNoMapa(evento) {
     document.getElementById('latitude').value = lat;
     document.getElementById('longitude').value = lng;
 
-    L.popup()
+    const popupCarregando = L.popup()
         .setLatLng(evento.latlng)
-        .setContent("Local selecionado! Preencha os dados do alagamento no formulário abaixo.")
+        .setContent("Buscando endereço... Por favor, aguarde.")
         .openOn(map);
+
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+        .then(resposta => {
+            if (!resposta.ok) throw new Error("Erro na requisição do servidor de mapas");
+            return resposta.json();
+        })
+        .then(dados => {
+            const nomeRua = dados.address.road || dados.address.pedestrian || dados.address.suburb || "";
+
+            if (nomeRua) {
+                document.getElementById('rua').value = nomeRua;
+                
+                popupCarregando.setContent(`<b>Local selecionado!</b><br>Rua identificada: ${nomeRua}.<br>Por favor, descreva o problema no formulário abaixo.`);
+            } else {
+                document.getElementById('rua').value = "";
+                popupCarregando.setContent("<b>Local selecionado!</b><br>Não encontramos o nome da rua automaticamente. Por favor, digite o nome da rua no formulário abaixo.");
+            }
+        })
+        .catch(erro => {
+            console.error("Falha na geocodificação reversa:", erro);
+            
+            document.getElementById('rua').value = "";
+            popupCarregando.setContent("<b>Local selecionado!</b><br>Não foi possível obter o nome da rua automaticamente devido a uma falha de conexão. <u>Por favor, digite o nome da rua manualmente no formulário.</u>");
+        });
 }
 
 map.on('click', aoClicarNoMapa);
@@ -83,6 +101,9 @@ document.getElementById('form-alagamento').addEventListener('submit', function(e
         if (dados.status === "sucesso") {
             alert("Alerta enviado com sucesso para o servidor!");
 
+            //Desenha o pin na tela usando os dados que acabaram de ser enviados
+            adicionarMarcadorNoMapa(dadosAlagamento.latitude, dadosAlagamento.longitude, dadosAlagamento.rua, dadosAlagamento.descricao);
+
             document.getElementById('form-alagamento').reset();
         } else {
             alert("Erro ao enviar o alerta.");
@@ -90,6 +111,6 @@ document.getElementById('form-alagamento').addEventListener('submit', function(e
     })
     .catch(erro => {
         console.error("Erro na requisição:", erro);
-        alert("Não foi possível conectar ao servidor. O backend está ligado?");
+        alert("Não foi possível conectar ao servidor.");
     });
 });
