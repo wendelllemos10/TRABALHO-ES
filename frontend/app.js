@@ -114,3 +114,26 @@ document.getElementById('form-alagamento').addEventListener('submit', function(e
         alert("Não foi possível conectar ao servidor.");
     });
 });
+
+// Busca por todos os alagamentos no banco de dados e carrega no mapa
+function carregarMarcadoresDoBanco() {
+    fetch('http://127.0.0.1:8000/api/alagamentos')
+        .then(resposta => {
+            if (!resposta.ok) throw new Error("Erro ao buscar dados do servidor");
+            return resposta.json();
+        })
+        .then(listaDeAlagamentos => {
+            listaDeAlagamentos.forEach(ponto => {
+                L.marker([ponto.latitude, ponto.longitude])
+                    .addTo(map)
+                    .bindPopup(`
+                        <b>Alagamento na ${ponto.rua}</b><br>
+                        <span style="color: #d9534f; font-weight: bold;">⚠️ ${ponto.quantidade_reportes} reportes nesta localização</span><br>
+                        <br>
+                        <b>Último relato:</b><br>
+                        ${ponto.descricao}
+                    `);
+            });
+        })
+        .catch(erro => console.error("Erro ao carregar marcadores iniciais:", erro));
+}

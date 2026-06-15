@@ -23,7 +23,7 @@ def criar_tabela():
     conexao.close()
 
 
-def verificar_existente(latitude, longitude):
+def verificar_existente(latitude, longitude, descricao):
 
     conexao = conectar()
     cursor = conexao.cursor()
@@ -54,10 +54,11 @@ def verificar_existente(latitude, longitude):
 
             cursor.execute("""
                 UPDATE alagamentos
-                SET quantidade_reportes = ?
+                SET quantidade_reportes = ?, descricao = ?
                 WHERE id = ?
             """, (
                 quantidade + 1,
+                descricao,
                 id_alagamento
             ))
 

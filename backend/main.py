@@ -42,7 +42,8 @@ def registrar_alagamento(alagamento: Alagamento):
 
     ja_existe = verificar_existente(
         alagamento.latitude,
-        alagamento.longitude
+        alagamento.longitude,
+        alagamento.descricao
     )
 
     if not ja_existe:

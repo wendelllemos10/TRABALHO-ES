@@ -3,10 +3,8 @@ title Servidor do FastAPI - Uvicorn
 echo Iniciando o servidor do projeto de alagamentos...
 echo.
 
-:: 1. Entra na pasta do seu projeto backend
 cd /d "%~dp0\backend"
 
-:: 2. Tenta rodar usando o módulo do Python (resolve o problema do PATH)
 python -m uvicorn main:app --reload
 
 if %errorlevel% neq 0 (
