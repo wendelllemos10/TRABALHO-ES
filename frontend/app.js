@@ -114,26 +114,84 @@ document.getElementById('form-alagamento').addEventListener('submit', function(e
         alert("Não foi possível conectar ao servidor.");
     });
 });
+//Foca na rua ao digitar o nome
+const inputRua = document.getElementById('rua');
+const listaSugestoes = document.getElementById('lista-sugestoes');
+let timeoutBusca;
 
-// Busca por todos os alagamentos no banco de dados e carrega no mapa
-function carregarMarcadoresDoBanco() {
-    fetch('http://127.0.0.1:8000/api/alagamentos')
-        .then(resposta => {
-            if (!resposta.ok) throw new Error("Erro ao buscar dados do servidor");
-            return resposta.json();
-        })
-        .then(listaDeAlagamentos => {
-            listaDeAlagamentos.forEach(ponto => {
-                L.marker([ponto.latitude, ponto.longitude])
-                    .addTo(map)
-                    .bindPopup(`
-                        <b>Alagamento na ${ponto.rua}</b><br>
-                        <span style="color: #d9534f; font-weight: bold;">⚠️ ${ponto.quantidade_reportes} reportes nesta localização</span><br>
-                        <br>
-                        <b>Último relato:</b><br>
-                        ${ponto.descricao}
-                    `);
-            });
-        })
-        .catch(erro => console.error("Erro ao carregar marcadores iniciais:", erro));
+inputRua.addEventListener('input', function() {
+    clearTimeout(timeoutBusca);
+    const termo = this.value.trim();
+
+    // Espera digitar pelo menos 3 letras para procurar a rua
+    if (termo.length < 3) {
+        listaSugestoes.innerHTML = '';
+        listaSugestoes.classList.add('sugestoes-oculta');
+        return;
+    }
+
+    timeoutBusca = setTimeout(() => {
+        // Faz o buscador a focar apenas em Quixadá Ceará
+        const query = encodeURIComponent(`${termo}, Quixadá, Ceará`);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=5`;
+
+        fetch(url)
+            .then(resposta => resposta.json())
+            .then(dados => {
+                exibirSugestoesDeRuas(dados);
+            })
+            .catch(erro => console.error("Erro ao buscar sugestões de rua:", erro));
+    }, 500);
+});
+
+// Renderiza as opções encontradas na tela
+function exibirSugestoesDeRuas(resultados) {
+    listaSugestoes.innerHTML = '';
+
+    if (resultados.length === 0) {
+        listaSugestoes.classList.add('sugestoes-oculta');
+        return;
+    }
+
+    resultados.forEach(local => {
+        const li = document.createElement('li');
+        li.className = 'sugestoes-item';
+        
+        li.textContent = local.display_name;
+        
+        // Ao clicar na opçao o mapa se move e o form atualiza
+        li.onclick = () => aplicarSelecaoDeRua(local);
+        
+        listaSugestoes.appendChild(li);
+    });
+
+    listaSugestoes.classList.remove('sugestoes-oculta');
 }
+
+// Executado quando o usuario clica em uma das sugestões da lista
+function aplicarSelecaoDeRua(local) {
+    const lat = parseFloat(local.lat);
+    const lng = parseFloat(local.lon);
+
+    // 1. Dá um zoom na rua selecionada 
+    map.flyTo([lat, lng], 17);
+
+    // 2. Preenche os campos ocultos
+    document.getElementById('latitude').value = lat;
+    document.getElementById('longitude').value = lng;
+    
+    const nomeLimpoRua = local.display_name.split(',')[0];
+    inputRua.value = nomeLimpoRua; 
+
+    // 4. Esconde a lista de sugestões
+    listaSugestoes.innerHTML = '';
+    listaSugestoes.classList.add('sugestoes-oculta');
+}
+
+// Fecha a lista de sugestões se o usuário clicar em qualquer outro lugar fora do formulário
+document.addEventListener('click', function(evento) {
+    if (evento.target !== inputRua && evento.target !== listaSugestoes) {
+        listaSugestoes.innerHTML = '';
+        listaSugestoes.classList.add('sugestoes-oculta');
+    }
+});

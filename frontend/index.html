@@ -19,18 +19,20 @@
 
     <div id="container-formulario">
         <h3>Reportar Ponto de Alagamento</h3>
-        <form id="form-alagamento">
-            <label for="rua">Nome da Rua/Referência:</label>
-            <input type="text" id="rua" required placeholder="Ex: Rua Clarindo de Queiroz">
-
-            <label for="descricao">Descrição do Problema:</label>
-            <textarea id="descricao" required placeholder="Ex: Água na altura do joelho, intransitável."></textarea>
-
-            <input type="hidden" id="latitude">
-            <input type="hidden" id="longitude">
-
-            <button type="submit">Enviar Alerta</button>
-        </form>
+            <form id="form-alagamento">
+                <label for="rua">Nome da Rua/Referência:</label>
+                <input type="text" id="rua" required placeholder="Ex: Rua Clarindo de Queiroz" autocomplete="off">
+                
+                <ul id="lista-sugestoes" class="sugestoes-oculta"></ul>
+            
+                <label for="descricao">Descrição do Problema:</label>
+                <textarea id="descricao" required placeholder="Ex: Água na altura do joelho, intransitável."></textarea>
+            
+                <input type="hidden" id="latitude">
+                <input type="hidden" id="longitude">
+            
+                <button type="submit">Enviar Alerta</button>
+            </form>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
