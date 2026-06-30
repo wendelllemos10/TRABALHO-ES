@@ -63,20 +63,34 @@ def registrar_alagamento(alagamento: Alagamento):
 
 @app.get("/api/alagamentos")
 def obter_alagamentos():
-
     registros = listar_alagamentos()
-
     resultado = []
 
     for registro in registros:
-
         resultado.append({
             "id": registro[0],
             "rua": registro[1],
-            "descricao": registro[2],
-            "latitude": registro[3],
-            "longitude": registro[4],
-            "quantidade_reportes": registro[5]
+            "latitude": registro[2],
+            "longitude": registro[3],
+            "quantidade_reportes": registro[4]
         })
 
     return resultado
+
+@app.get("/api/alagamentos/{alagamento_id}/relatos")
+def obter_relatos_do_ponto(alagamento_id: int):
+    import sqlite3
+    conexao = sqlite3.connect("alagamentos.db")
+    cursor = conexao.cursor()
+    
+    cursor.execute("""
+        SELECT descricao, strftime('%d/%m às %H:%M', data_registro, 'localtime') 
+        FROM relatos 
+        WHERE alagamento_id = ? 
+        ORDER BY id DESC
+    """, (alagamento_id,))
+    
+    dados = cursor.fetchall()
+    conexao.close()
+    
+    return [{"descricao": r[0], "data": r[1]} for r in dados]
